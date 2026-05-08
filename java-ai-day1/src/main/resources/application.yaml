@@ -1,0 +1,10 @@
+spring:
+  ai:
+    dashscope:
+      api-key: sk-e3c4be5fdcfa4a3c8845d88be144cb95   # 替换成你的真实 key
+      chat:
+        options:
+          model: qwen3.5-plus
+
+server:
+  port: 9876

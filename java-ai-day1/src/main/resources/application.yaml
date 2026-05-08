@@ -4,7 +4,11 @@ spring:
       api-key: sk-e3c4be5fdcfa4a3c8845d88be144cb95   # 替换成你的真实 key
       chat:
         options:
-          model: qwen3.5-plus
-
+          model: qwen-max
+      # 新增超时配置（单位：毫秒）
+      connection-timeout: 10000        # 连接超时 10秒
+      read-timeout: 180000             # 读取超时 180秒（3分钟）
+      write-timeout: 60000             # 写入超时 60秒
+      timeout: 600s
 server:
   port: 9876

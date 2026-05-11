@@ -1,6 +1,8 @@
 package com.zhl.ai.javaaiday1.controller;
 
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.Prompt;
@@ -23,12 +25,16 @@ import java.util.Map;
 public class AiDemoController {
 
     private final ChatClient chatClient;
+    // 在 Controller 中注入 ChatMemory
+    private final ChatMemory chatMemory;
 
     // 通过构造函数注入 ChatClient
-    public AiDemoController(ChatClient.Builder builder) {
+    public AiDemoController(ChatClient.Builder builder, ChatMemory chatMemory) {
         this.chatClient = builder.defaultSystem("你是一个资深开发专家")
                 .build();
+        this.chatMemory = chatMemory;
     }
+
 
     // 同步接口
     @GetMapping("/ai/chat")
@@ -91,6 +97,22 @@ public class AiDemoController {
         Map<String, Object> params = Map.of("text", text);
         Prompt prompt = template.create(params);
         return chatClient.prompt(prompt).call().content();
+    }
+
+    // 带记忆的流式接口
+    @GetMapping(value = "/ai/chat/stream/memory", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<String> streamChatWithMemory(@RequestParam String msg,
+                                             @RequestParam(defaultValue = "default") String sessionId){
+
+        // 创建 advisor，每个 session 独立记忆
+        MessageChatMemoryAdvisor memoryAdvisor =  MessageChatMemoryAdvisor.builder(chatMemory)
+                .conversationId(sessionId).build();
+        return chatClient.prompt()
+                .user(msg)
+                .advisors(memoryAdvisor)   // 添加记忆顾问
+                .stream()
+                .content();
+
     }
 
 }

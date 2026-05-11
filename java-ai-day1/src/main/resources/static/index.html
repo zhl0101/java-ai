@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Java AI 聊天室 - 通义千问</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 0 20px;
+            background: #f5f7fa;
+        }
+        h1 { color: #2c3e50; text-align: center; margin-bottom: 5px; }
+        .sub { text-align: center; color: #7f8c8d; margin-bottom: 20px; font-size: 0.9em; }
+        #chat-box {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            height: 500px;
+            overflow-y: auto;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .message {
+            max-width: 80%;
+            padding: 10px 14px;
+            border-radius: 18px;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+        .user {
+            align-self: flex-end;
+            background-color: #007aff;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        .ai {
+            align-self: flex-start;
+            background-color: #e9ecef;
+            color: #1e1e2f;
+            border-bottom-left-radius: 4px;
+            white-space: pre-wrap;
+        }
+        .input-area {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background: white;
+            border-radius: 40px;
+            padding: 8px 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        #message-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            padding: 12px 8px;
+            font-size: 1rem;
+            background: transparent;
+        }
+        button {
+            background: #007aff;
+            border: none;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        button:hover { background: #005fc1; }
+        button:disabled { background: #aaa; cursor: not-allowed; }
+        .clear-btn { background: #e74c3c; }
+        .clear-btn:hover { background: #c0392b; }
+        .typing { font-style: italic; color: #95a5a6; }
+    </style>
+</head>
+<body>
+<h1>🤖 Java + AI 助手</h1>
+<div class="sub">基于阿里百炼（通义千问） | 流式对话 | 记住上下文</div>
+<div id="chat-box"></div>
+<div class="input-area">
+    <input type="text" id="message-input" placeholder="输入你的问题..." autofocus />
+    <button id="send-btn">发送</button>
+    <button id="clear-btn" class="clear-btn">清空对话</button>
+</div>
+
+<script>
+    // 采用 EventSource 无法携带自定义 headers 和 POST body，改用 fetch + ReadableStream 处理 SSE
+    // 但后端流式接口是 GET /ai/chat/stream?msg=xxx，可以直接用 EventSource。
+    // 不过 GET 请求有长度限制，且不方便传复杂参数。我们用 fetch 来发送 GET 并读取流。
+
+    const chatBox = document.getElementById('chat-box');
+    const messageInput = document.getElementById('message-input');
+    const sendBtn = document.getElementById('send-btn');
+    const clearBtn = document.getElementById('clear-btn');
+
+    // 存储当前 AI 消息的临时元素
+    let currentAiMessageDiv = null;
+    let currentAiText = '';
+
+    // 添加消息到界面
+    function addMessage(role, content) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `message ${role}`;
+        msgDiv.innerHTML = `<strong>${role === 'user' ? '你' : 'AI'}:</strong> ${content.replace(/\n/g, '<br>')}`;
+        chatBox.appendChild(msgDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+        return msgDiv;
+    }
+
+    // 发送消息并处理流式响应
+    async function sendMessage() {
+        const question = messageInput.value.trim();
+        if (!question) return;
+
+        // 禁用发送按钮
+        sendBtn.disabled = true;
+        messageInput.value = '';
+
+        // 显示用户消息
+        addMessage('user', question);
+
+        // 创建一个占位的 AI 消息元素
+        currentAiMessageDiv = document.createElement('div');
+        currentAiMessageDiv.className = 'message ai';
+        currentAiMessageDiv.innerHTML = '<strong>AI:</strong> <span class="typing">思考中...</span>';
+        chatBox.appendChild(currentAiMessageDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        currentAiText = '';
+
+        try {
+            // 获取或生成会话ID
+            let sessionId = localStorage.getItem('chat_session_id');
+            if (!sessionId) {
+                sessionId = 'session_' + Date.now();
+                localStorage.setItem('chat_session_id', sessionId);
+            }
+
+            // 调用后端的流式接口（GET /ai/chat/stream）
+            const response = await fetch(`/ai/chat/stream/memory?msg=${encodeURIComponent(question)}&sessionId=${sessionId}`);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                const chunk = decoder.decode(value);
+                // SSE 格式：data: 内容\n\n
+                const lines = chunk.split('\n');
+                for (const line of lines) {
+                    if (line.startsWith('data:')) {
+                        const token = line.substring(5).trim();
+                        if (token === '[DONE]') continue;
+                        currentAiText += token;
+                        // 更新显示，支持换行
+                        currentAiMessageDiv.innerHTML = `<strong>AI:</strong> ${currentAiText.replace(/\n/g, '<br>')}`;
+                        chatBox.scrollTop = chatBox.scrollHeight;
+                    }
+                }
+            }
+            // 流结束，如果内容为空则提示
+            if (!currentAiText) {
+                currentAiMessageDiv.innerHTML = '<strong>AI:</strong> 未获得有效回复，请重试。';
+            }
+        } catch (error) {
+            console.error('Stream error:', error);
+            currentAiMessageDiv.innerHTML = '<strong>AI:</strong> 请求失败，请检查后端服务。';
+        } finally {
+            sendBtn.disabled = false;
+            messageInput.focus();
+            currentAiMessageDiv = null;
+            currentAiText = '';
+        }
+    }
+
+    // 清空界面聊天记录（注意：仅前端清空，后端会话记忆保留）
+    function clearChat() {
+        chatBox.innerHTML = '';
+        // 重置会话ID，让后端开始新会话
+        sessionId = 'session_' + Date.now();
+        localStorage.setItem('chat_session_id', sessionId);
+        // 可选：添加一条系统欢迎语
+        addMessage('ai', '对话已重置，我是新的会话。');
+    }
+
+    // 绑定事件
+    sendBtn.addEventListener('click', sendMessage);
+    clearBtn.addEventListener('click', clearChat);
+    messageInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !sendBtn.disabled) sendMessage();
+    });
+
+    // 初始化欢迎语
+    addMessage('ai', '你好！我是 Java + AI 助手，支持流式对话和上下文记忆。请问有什么可以帮助你的？');
+</script>
+</body>
+</html>

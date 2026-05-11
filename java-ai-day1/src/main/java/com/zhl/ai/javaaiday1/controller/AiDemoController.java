@@ -29,12 +29,17 @@ public class AiDemoController {
     private final ChatMemory chatMemory;
 
     // 通过构造函数注入 ChatClient
-    public AiDemoController(ChatClient.Builder builder, ChatMemory chatMemory) {
+    /*public AiDemoController(ChatClient.Builder builder, ChatMemory chatMemory) {
         this.chatClient = builder.defaultSystem("你是一个资深开发专家")
                 .build();
         this.chatMemory = chatMemory;
-    }
+    }*/
 
+    // 直接注入已经配置好工具的 ChatClient Bean
+    public AiDemoController(ChatClient chatClientTool, ChatMemory chatMemory) {
+        this.chatClient = chatClientTool;
+        this.chatMemory = chatMemory;
+    }
 
     // 同步接口
     @GetMapping("/ai/chat")

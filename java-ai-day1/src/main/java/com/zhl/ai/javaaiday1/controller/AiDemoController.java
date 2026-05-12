@@ -41,6 +41,15 @@ public class AiDemoController {
         this.chatMemory = chatMemory;
     }
 
+    // 使用工具接口
+    @GetMapping("/ai/function")
+    public String chatWithFunction (@RequestParam String msg){
+        return chatClient.prompt()
+                .user(msg)
+                .call()
+                .content();
+    }
+
     // 同步接口
     @GetMapping("/ai/chat")
     public String chat(@RequestParam String msg) {

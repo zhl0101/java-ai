@@ -12,3 +12,7 @@ spring:
       timeout: 600s
 server:
   port: 9876
+logging:
+  level:
+    com.alibaba.cloud.ai: DEBUG
+    org.springframework.ai: DEBUG

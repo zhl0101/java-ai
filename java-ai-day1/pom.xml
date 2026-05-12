@@ -16,6 +16,7 @@
 
     <properties>
         <java.version>21</java.version>
+        <lombok.version>1.18.30</lombok.version>
     </properties>
 
     <!-- 1. 配置仓库：申明 Spring AI Alibaba 依赖的下载源 -->
@@ -67,6 +68,11 @@
             <groupId>com.alibaba.cloud.ai</groupId>
             <artifactId>spring-ai-alibaba-starter-dashscope</artifactId>
         </dependency>
+        <!-- 4. 添加 Spring Security OAuth2 依赖，解决 ClientAuthorizationException 类找不到问题 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-client</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -98,6 +104,7 @@
                                 <path>
                                     <groupId>org.projectlombok</groupId>
                                     <artifactId>lombok</artifactId>
+                                    <version>${lombok.version}</version>
                                 </path>
                             </annotationProcessorPaths>
                         </configuration>
@@ -113,6 +120,7 @@
                                 <path>
                                     <groupId>org.projectlombok</groupId>
                                     <artifactId>lombok</artifactId>
+                                    <version>${lombok.version}</version>
                                 </path>
                             </annotationProcessorPaths>
                         </configuration>

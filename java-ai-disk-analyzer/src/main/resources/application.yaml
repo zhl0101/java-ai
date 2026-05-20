@@ -1,0 +1,44 @@
+server:
+  port: 8087
+
+spring:
+  application:
+    name: disk-analyzer
+  thymeleaf:
+    cache: false
+    prefix: classpath:/templates/
+    suffix: .html
+
+# 磁盘分析配置
+disk:
+  analyzer:
+    # 安全路径白名单（只允许扫描这些路径）
+    safe-paths:
+      - /tmp
+      - /var/tmp
+      - /home
+      - /Users
+      - /mnt
+      - /opt
+      - /data
+      - /media
+      - /root
+      - /var
+      - /Library
+    # 禁止操作的路径（系统关键目录）
+    blocked-paths:
+      - /
+      - /bin
+      - /sbin
+      - /usr/bin
+      - /usr/sbin
+      - /etc
+      - /boot
+      - /proc
+      - /sys
+    # 大文件阈值（MB）
+    large-file-threshold: 100
+    # 建议清理的临时文件天数
+    temp-file-days: 7
+    # 线程池大小（用于并行处理深目录，默认4）
+    thread-pool-size: 4

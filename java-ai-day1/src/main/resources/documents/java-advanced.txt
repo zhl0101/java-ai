@@ -1,0 +1,14 @@
+Java 内存模型（JMM）
+Java 内存模型定义了多线程程序中变量的访问规则，核心包括：
+1. 可见性：volatile 变量能保证修改立即对其他线程可见
+2. 原子性：通过 synchronized 或 Lock 保证操作不会被打断
+3. 有序性：happens-before 规则保证了部分重排序的约束
+
+常见的 happens-before 规则：
+- 程序顺序规则：同一个线程内的每个操作都 happens-before 后续操作
+- volatile 规则：对 volatile 变量的写操作 happens-before 后续的读操作
+- 锁规则：对锁的解锁操作 happens-before 后续对同一锁的加锁操作
+- 传递性：若 A happens-before B 且 B happens-before C，则 A happens-before C
+
+JDK 8 引入的改进：基于 CAS 操作的 StampedLock 提供了更灵活的锁机制
+JDK 9+ 引入了 VarHandle 作为更底层的内存访问 API

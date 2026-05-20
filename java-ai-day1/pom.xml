@@ -68,11 +68,35 @@
             <groupId>com.alibaba.cloud.ai</groupId>
             <artifactId>spring-ai-alibaba-starter-dashscope</artifactId>
         </dependency>
-        <!-- 4. 添加 Spring Security OAuth2 依赖，解决 ClientAuthorizationException 类找不到问题 -->
+        <!-- 4. 仅引入 oauth2-client 核心 jar，提供 ClientAuthorizationException 类
+             不使用 spring-boot-starter-oauth2-client，避免开启 Spring Security Web 安全拦截 -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-oauth2-client</artifactId>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-oauth2-client</artifactId>
         </dependency>
+        <!-- 文档读取器：支持 PDF、Word、TXT 等多格式 -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-tika-document-reader</artifactId>
+            <version>1.0.0-M3</version>
+        </dependency>
+        <!-- Tika 核心库：spring-ai-tika-document-reader 需要显式引入 -->
+        <dependency>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-core</artifactId>
+            <version>2.9.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-parsers-standard-package</artifactId>
+            <version>2.9.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>fastjson</artifactId>
+            <version>2.0.25</version>
+        </dependency>
+
     </dependencies>
 
     <build>

@@ -5,11 +5,12 @@ spring:
       chat:
         options:
           model: qwen-max
-      # 新增超时配置（单位：毫秒）
-      connection-timeout: 10000        # 连接超时 10秒
-      read-timeout: 180000             # 读取超时 180秒（3分钟）
-      write-timeout: 60000             # 写入超时 60秒
-      timeout: 600s
+      embedding:
+        options:
+          model: text-embedding-v3            # 阿里百炼的 Embedding 模型，用于向量化
+      # ⚠️ 超时配置请勿在此处设置，connection-timeout / read-timeout / write-timeout
+      # 不是 DashScope 自动配置支持的属性，设置了也不会生效。
+      # 超时配置请参见 HttpClientConfig.java 中通过自定义 RestClient.Builder 实现
 server:
   port: 9876
 logging:
